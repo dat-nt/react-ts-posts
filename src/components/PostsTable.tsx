@@ -12,25 +12,37 @@ import {
     TableRow,
     Paper,
     TablePagination,
+    Box,
+    CircularProgress,
 } from "@mui/material";
 
 const PostsTable: React.FC = () => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [loading, setLoading] = useState(true);
+
+    const delay = (ms: number) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 
     useEffect(() => {
         const fetchPosts = async () => {
             try {
                 const response = await axios.get("https://jsonplaceholder.typicode.com/posts");
                 setPosts(response.data);
+                setLoading(false);
             } catch (error) {
                 console.error("Error fetching posts:", error);
             }
         };
 
-        fetchPosts();
+        delay(1000).then(() => fetchPosts());
     }, []);
+
+    const startIndex = page * rowsPerPage;
+    const endIndex = page * rowsPerPage + rowsPerPage;
+    const currentPosts = posts.slice(startIndex, endIndex);
 
     const handleChangePage = (
         _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -59,14 +71,25 @@ const PostsTable: React.FC = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {posts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((post) => (
-                            <TableRow key={post.id} className="table-row">
-                                <TableCell>{post.id}</TableCell>
-                                <TableCell>{post.userId}</TableCell>
-                                <TableCell>{post.title}</TableCell>
-                                <TableCell>{post.body}</TableCell>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={4} align="center">
+                                    <Box display="flex" justifyContent="center" alignItems="center">
+                                        <CircularProgress size={20} />
+                                        <Box component="h3" ml={2}>Loading...</Box>
+                                    </Box>
+                                </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            currentPosts.map((post) => (
+                                <TableRow key={post.id} className="table-row">
+                                    <TableCell>{post.id}</TableCell>
+                                    <TableCell>{post.userId}</TableCell>
+                                    <TableCell>{post.title}</TableCell>
+                                    <TableCell>{post.body}</TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -83,7 +106,7 @@ const PostsTable: React.FC = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
             />
         </Paper>
-    );
-};
+    )
+}
 
 export default PostsTable;
